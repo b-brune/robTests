@@ -1,93 +1,207 @@
 ## ----------------------------------------------------------------------------
-## M-estimator test
+## Two-sample location test based on difference of M-estimators
 ## ----------------------------------------------------------------------------
 
 #' @title Two sample location test based on M-estimators
-#' 
-#' @description \code{m_estimator_test} performs a two-sample permutation or randomization test
-#'              based on M-estimators of location and respective variances
-#'              
-#' @inheritParams hl2_test
-#' @param method a character string specifying the test method used: \code{"exact"} for an exact and \code{"sampled"}
-#'               for a randomized permutation test. The exact 
-#'               permutation test uses all data permutations while the randomized test draws \code{n.rep} random permutations
-#'               with replacement. 
-#' @param psi kernel used for optimization, must be one of \code{"bisquare"}, \code{"hampel"} and \code{"huber"},
-#'            defaults to \code{"huber"}.
-#' @param k tuning parameter(s) for the respective kernel function, defaults to parameters implemented in .Mpsi.tuning.default(psi) from 
-#'          \code{robustbase} package.
-#'          
-#' @param n.rep an integer value specifying the number of random permutations used to calculate
-#'              the permutation distribution if \code{method = "sampled"}, 
-#'              ignored if \code{method = "exact"}. Default is 10000.
-#'              
+#'
+#' @description \code{m_test} performs a two-sample location test
+#'              based on M-estimators.
+#'
+#' @template x
+#' @template y
+#' @template alternative
+#' @template delta
+#' @template method
+#' @template psi
+#' @template k_mest
+#' @template n_rep
+#' @template na_rm
+#' @template var_test
+#' @template wobble_seed
+#' @template scaleTau2
+#'
+#' @details
+#'
+#' The test statistic for this test is based on the difference of the M-estimates
+#' of location of \code{x} and \code{y}. We implemented three different psi-functions:
+#' \code{huber},\code{hampel} and \code{bisquare}. The according tuning parameter(s) can
+#' be set in the \code{k} argument of the function.
+
+#' The estimate of the location difference is scaled by a pooled estimate for
+#' the standard deviation. This estimate is based on the
+#' tau scale estimator. The tau scale estimate is computed with the default parameter settings
+#' of the function \code{\link[robustbase]{scaleTau2}}. These can be changed if necessary
+#' by setting \code{c1} and \code{c2}.
+#' More details are given in the vignette, which can be
+#' called by \code{vignette{"robTests-vignette"}}.
+#'
+#' We offer three versions of the test: randomization, permutation and asymptotic.
+#'
+#' When computing the randomization distribution based on randomly drawn splits
+#' with replacement, the function \code{\link[statmod]{permp}} \insertCite{PhiSmy10perm}{robTests}
+#' is used to calculate the p-value. The psi function for the the M-estimate
+#' is computed via the implementations in the package \code{\link[=Mpsi]{robustbase}}.
+#'
+#' For the asymptotic test, the distribution of the test statistic is approximated
+#' by a standard normal distribution.
+#' However, this assumption is only justified under the normality assumption. In
+#' case of a non-normal distribution, the test might not keep the desired significance
+#' level. The test keeps the level under several distributions as long as the
+#' variance exists. However, under skewed distributions, it tends to be anti-conservative.
+#' The test statistic can be corrected by a factor which has to be determined
+#' individually for a specific distribution.
+#'
+#' For \code{var.test = TRUE}, the test compares the two samples for a difference in scale.
+#' This is achieved by log-transforming the original observations so that a potential
+#' scale difference appears as a location difference between the transformed samples;
+#' see \insertCite{Fri12onli;textual}{robTests}. The sample should not contain zeros
+#' to prevent problems with the necessary log-transformation. If it contains zeros,
+#' uniform noise is added to all variables in order to remove zeros. A warning is
+#' printed.
+#'
+#' If the sample has been modified because of zeros when \code{var.test = TRUE},
+#' the modified samples can be retrieved using
+#'
+#' \code{set.seed(wobble.seed); wobble(x, y)}
+#'
+#' Both samples need to contain at least 5 non-missing values.
+#'
 #' @return
 #' A list with class "\code{htest}" containing the following components:
 #' \item{statistic}{the value of the test statistic.}
+#' \item{parameter}{the degrees of freedom for the test statistic.}
 #' \item{p.value}{the p-value for the test.}
-#' \item{estimate}{the estimated difference in means.}
+#' \item{estimate}{the Huber M-estimates of \code{x} and \code{y}.}
 #' \item{null.value}{the specified hypothesized value of the mean difference.}
 #' \item{alternative}{a character string describing the alternative hypothesis.}
-#' \item{method}{a character string indicating what type of trimmed t-test was performed.}
+#' \item{method}{a character string indicating how the p-value was computed.}
 #' \item{data.name}{a character string giving the names of the data.}
-#' 
-#' @details Details on the tests implemented here can be found in Aboukalam (1992).
-#' @references 
-#' \insertRef{Abo92robu}{robTests}
-#' 
-#' @import robustbase
-#' @examples 
+#'
+#' @references
+#'
+#' \insertRef{Fri12onli}{robTests}
+#'
+#' \insertRef{MarZam02robu}{robTests}
+#'
+#' \insertRef{PhiSmy10perm}{robTests}
+#'
+#' @examples
+#' ## Generate random samples
+#' set.seed(108)
 #' x <- rnorm(20); y <- rnorm(20)
-#' m_estimator_test(x, y, psi = "huber", method = "sampled", n.rep = 1000)
-#' m_estimator_test(x, y, psi = "bisquare", method = "sampled", n.rep = 1000)
-#' @export 
+#'
+#' ## Asymptotic test based on Huber M-estimator
+#' m_test(x, y, method = "asymptotic", psi = "huber")
+#'
+#' \dontrun{
+#' ## Randomization test based on Hampel M-estimator with 1000 random permutations
+#' ## drawn with replacement
+#'
+#' m_test(x, y, method = "randomization", n.rep = 1000, psi = "hampel")
+#' }
+#'
+#' @export
 
+m_test <- function(x, y, alternative = c("two.sided", "greater", "less"),
+                   delta = ifelse(var.test, 1, 0),
+                   method = c("asymptotic", "permutation", "randomization"),
+                   psi = c("huber", "hampel", "bisquare"),
+                   k = robustbase::.Mpsi.tuning.default(psi),
+                   n.rep = 10000, na.rm = FALSE,
+                   var.test = FALSE, wobble.seed = NULL, ...) {
 
-m_estimator_test <- function(x, y, alternative = c("two.sided", "greater", "less"), delta = 0, 
-                             method = c("sampled", "exact"), 
-                             psi = c("huber", "hampel", "bisquare"), k = .Mpsi.tuning.default(psi),
-                             n.rep = 10000, na.rm = FALSE) {
-  
-  alternative <- match.arg(alternative)
-  method <- match.arg(method)
+  ## Check input arguments ----
   psi <- match.arg(psi)
-  
-  if (!missing(delta) && (length(delta) != 1 || is.na(delta))) {
-    stop ("'delta' must be a single number.")
-  }
-  
-  if (length(method == 1) & !(method %in% c("exact", "sampled"))) {
-    stop (" 'method' must be one of 'exact' and 'sampled' ")
-  }
-  
-  if (method == "sampled") sampled <- TRUE else sampled <- FALSE
-    
-    stats <- m_test_statistic(x, y - delta, psi = psi, k = k)
-    statistic <- stats$statistic
-    
-    estimates <- c(stats$estimates[1], m_est(y, psi = psi, k = k, max.it = 1)$est) # 
-    
-    distribution <- mest_perm_distribution(x = x, y = y - delta, sampled = sampled, 
-                                           n.rep = n.rep, psi = psi, k1 = k)
+  check_test_input(x = x, y = y, alternative = alternative, delta = delta,
+                   method = method, scale = scale, n.rep = n.rep, na.rm = na.rm,
+                   var.test = var.test, wobble = wobble, wobble.seed = wobble.seed,
+                   test.name = "m_test", psi = psi, k = k)
+
+  # Extract names of data sets ----
+  dname <- paste(deparse(substitute(x)), "and", deparse(substitute(y)))
+
+  ## Match 'alternative' and 'scale' ----
+  # 'method' not matched because computation of p-value depends on sample sizes
+  # if no value is specified by the user
+  alternative <- match.arg(alternative)
+
+  prep <- preprocess_data(x = x, y = y, delta = delta, na.rm = na.rm,
+                          wobble = FALSE, wobble.seed = wobble.seed,
+                          var.test = var.test)
+  if (!all(is.na(prep))) {
+    x <- prep$x; y <- prep$y; delta <- prep$delta
+  } else return(NA)
+
+
+  method <- select_method(x = x, y = y, method = method, test.name = "m_test",
+                          n.rep = n.rep)
+
+  ## ___________________________________________________________________________
+  ## Test decision
+  ## ___________________________________________________________________________
+
+  ## Test statistic and location estimates for both samples
+  stats <- m_test_statistic(x, y + delta, psi = psi, k = k, ...)
+  statistic <- stats$statistic
+  estimates <- stats$estimates
+  estimates[2] <- stats$estimates[2] - delta
+
+  if (method %in% c("permutation", "randomization")) {
+    ## _________________________________________________________________________
+    ## Test decision for permutation and randomization test
+    ## _________________________________________________________________________
+    ## Set n.rep
+    n.rep <- min(choose(length(x) + length(y), length(x)), n.rep)
+
+    ## Permutation or randomization distribution
+    distribution <- m_est_perm_distribution(x = x, y = y - delta, randomization = (method == "randomization"),
+                                           n.rep = n.rep, psi = psi, k = k)
+
+    ## p-value
     p.value <- calc_perm_p_value(statistic, distribution, m = length(x), n = length(y),
-                                 sampled = sampled, n.rep = n.rep, alternative = alternative)
-    
-    names(estimates) <- c("M-est. of x", "M-est. of y") ## y - delta? 
+                                 randomization = (method == "randomization"), n.rep = n.rep, alternative = alternative)
+  } else if (method == "asymptotic") {
+    ## _________________________________________________________________________
+    ## Test decision for asymptotic test
+    ## _________________________________________________________________________
+
+    ## p-value
+    p.value <- switch (alternative,
+                       two.sided = 2 * stats::pnorm(abs(statistic), lower.tail = FALSE),
+                       greater = stats::pnorm(statistic, lower.tail = FALSE),
+                       less = stats::pnorm(statistic, lower.tail = TRUE)
+    )
+  }
+
+  ## ___________________________________________________________________________
+  ## Specify output
+  ## ___________________________________________________________________________
+
+  ## Names of estimates
+  if (var.test) {
+    names(estimates) <- c("M-est. of log(x^2)", "M-est. of log(y^2)")
+    names(delta) <- "ratio of variances"
+    delta <- exp(delta)
+  } else {
+    names(estimates) <- c("M-est. of x", "M-est. of y")
     names(delta) <- "location shift"
-    names(statistic) <- "D"
-    
-    if (method == "sampled") {
-      method = paste("Randomization test based on the ", paste0(toupper(substring(psi, 1, 1)), substring(psi, 2, nchar(psi))), "M-estimator") # ist das okay so mit den Kleinbuchstaben?
-    } else method = paste("Exact permutation test based on the", psi, "M-estimator")
-    
-    
-    dname <- paste(deparse(substitute(x)), "and", deparse(substitute(y)))
-    
-    res <- list(statistic = statistic, parameter = NULL, p.value = p.value, 
-                estimate = estimates, null.value = delta, alternative = alternative,
-                method = method, data.name = dname)
-    
-    class(res) <- "htest"
-  
-    return(res)
+  }
+  names(statistic) <- ifelse(var.test, "S", "D")
+
+  ## Name of method to compute p-value
+  if (method == "randomization") {
+    method <- paste0("Randomization test based on ", toupper(substring(psi, 1, 1)), substring(psi, 2, nchar(psi)), " M-estimator ", "(", n.rep, " random permutations)")
+  } else if (method == "permutation") {
+    method <- paste("Exact permutation test based on ", paste0(toupper(substring(psi, 1, 1)), substring(psi, 2, nchar(psi))), "M-estimator")
+  } else method <- paste("Asymptotic test based on ", paste0(toupper(substring(psi, 1, 1)), substring(psi, 2, nchar(psi))), "M-estimator")
+
+  ## Output
+  res <- list(statistic = statistic, parameter = NULL, p.value = p.value,
+              estimate = estimates, null.value = delta, alternative = alternative,
+              method = method, data.name = dname)
+
+  class(res) <- "htest"
+
+  return(res)
 }
+

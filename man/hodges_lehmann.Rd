@@ -7,9 +7,9 @@
 hodges_lehmann(x, na.rm = FALSE)
 }
 \arguments{
-\item{x}{numeric vector of observations.}
+\item{x}{a (non-empty) numeric vector of data values.}
 
-\item{na.rm}{a logical value indicating whether NA values in \code{x} should be stripped before the computation proceeds.}
+\item{na.rm}{logical value indicating whether NA values in x and y should be stripped before the computation proceeds.}
 }
 \value{
 The one-sample Hodges-Lehmann estimator.
@@ -18,8 +18,18 @@ The one-sample Hodges-Lehmann estimator.
 \code{hodges_lehmann} calculates the one-sample Hodges-Lehmann estimator
 of a sample.
 }
+\details{
+The one-sample Hodges-Lehmann estimator for a sample of size \code{n}
+         is defined as
+
+\deqn{med(\frac{X_i + X_j}{2},  1 \le i < j \le m).}
+}
 \examples{
+## Generate random sample
+set.seed(108)
 x <- rnorm(10)
+
+## Compute one-sample Hodges-Lehmann estimator
 hodges_lehmann(x)
 
 }

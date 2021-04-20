@@ -4,29 +4,59 @@
 \alias{m_est}
 \title{M-estimator of location}
 \usage{
-m_est(x, psi, k = .Mpsi.tuning.default(psi), tol = 1e-06,
-  max.it = 15)
+m_est(
+  x,
+  psi,
+  k = robustbase::.Mpsi.tuning.default(psi),
+  tol = 1e-06,
+  max.it = 15,
+  na.rm = FALSE
+)
 }
 \arguments{
-\item{x}{numeric vector of observations.}
+\item{x}{a (non-empty) numeric vector of data values.}
 
-\item{psi}{kernel used for optimization, must be one of \code{"bisquare"}, \code{"hampel"} and \code{"huber"}}
+\item{psi}{kernel used for optimization.
+Must be one of \code{"bisquare"}, \code{"hampel"} and \code{"huber"}.
+The default is \code{"huber"}.}
 
-\item{k}{tuning parameter(s) for the respective kernel function, defaults to parameters implemented in .Mpsi.tuning.default(psi) from 
-\code{robustbase} package.}
+\item{k}{tuning parameter(s) for the respective kernel function,
+defaults to parameters implemented in \code{\link[robustbase:lmrob.control]{.Mpsi.tuning.default(psi)}}
+in the package \href{https://cran.r-project.org/package=robustbase}{robustbase}.}
 
-\item{tol}{tolerance for convergence, defaults to 1e-06.}
+\item{tol}{tolerance for convergence. The default is 1e-06.}
 
-\item{max.it}{the maximum number of iterations, defaults to 15.}
+\item{max.it}{the maximum number of iterations. The default is 15.}
+
+\item{na.rm}{logical value indicating whether NA values in x and y should be stripped before the computation proceeds.}
 }
 \value{
-A list containing the items:
-        \item{est}{estimated mean, and}
+A list containing the components:
+        \item{est}{estimated mean.}
         \item{var}{estimated variance.}
 }
 \description{
-\code{m_est} calculates the M-estimate of location and its variance using different tuning functions
+\code{m_est} calculates an M-estimate of location and its variance
+for different psi functions.
+}
+\details{
+To compute the M-estimate, the iterative algorithm described in \insertCite{MarMarYoh06robu;textual}{robTests} is used.
+The variance is estimated as in \insertCite{Hub81robu;textual}{robTests}.
+
+If \code{max.it} contains decimal places, it is truncated.
 }
 \examples{
 
+## Generate random sample
+set.seed(108)
+x <- rnorm(10)
+
+## Computer Huber's M-estimate
+m_est(x, psi = "huber")
+
+}
+\references{
+\insertRef{MarMarYoh06robu}{robTests}
+
+\insertRef{Hub81robu}{robTests}
 }

@@ -2,6 +2,10 @@
 robTests
 ========
 
+<!-- badges: start -->
+[![Codecov test coverage](https://codecov.io/gh/s-abbas/robTests/branch/master/graph/badge.svg)](https://codecov.io/gh/s-abbas/robTests?branch=master)
+<!-- badges: end -->
+
 The R-package robTests contains different functions for robust two-sample tests for location.
 
 Installation
@@ -46,7 +50,7 @@ For details and references see the documentation of the different functions.
 ### Perform two sample tests for location shift
 
 ``` r
-x <- rnorm(50); y <- rnorm(20)
+x <- rnorm(50); y <- rnorm(50)
 
 ## Perform a trimmed two sample test:
 trimmed_test(x, y, gamma = 0.1)
@@ -86,6 +90,10 @@ trim_mean(x)
 win_var(x)$var
 #> [1] 1.099881
 ```
+
+# Contributions
+
+We are grateful for any contribution to the further development of the R package. If you experience any problems using the package or have suggestions for new features, please open an issue in the [issue tracker](https://github.com/s-abbas/robTests/issues). 
 
 Authors
 -------

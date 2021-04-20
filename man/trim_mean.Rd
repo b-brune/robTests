@@ -7,12 +7,12 @@
 trim_mean(x, gamma = 0.2, na.rm = FALSE)
 }
 \arguments{
-\item{x}{numeric vector of observations.}
+\item{x}{a (non-empty) numeric vector of data values.}
 
-\item{gamma}{numeric value in [0, 0.5] specifying the fraction of observations to be trimmed 
+\item{gamma}{numeric value in [0, 0.5] specifying the fraction of observations to be trimmed
 from each end of the sample before calculating the mean.}
 
-\item{na.rm}{a logical value indicating whether NA values in \code{x} should be stripped before the computation proceeds.}
+\item{na.rm}{logical value indicating whether NA values in x and y should be stripped before the computation proceeds.}
 }
 \value{
 The trimmed mean.
@@ -21,13 +21,14 @@ The trimmed mean.
 \code{trim_mean} calculates a trimmed mean of a sample.
 }
 \details{
-
+This is a wrapper function for the function \code{\link[base]{mean}}.
 }
 \examples{
+## Generate random sample
+set.seed(108)
 x <- rnorm(10)
+
+## Compute 20\% trimmed mean
 trim_mean(x, gamma = 0.2)
 
-}
-\references{
-\insertRef{ReeSta96hing}{robTests}
 }

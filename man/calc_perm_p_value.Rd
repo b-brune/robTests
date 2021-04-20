@@ -4,8 +4,15 @@
 \alias{calc_perm_p_value}
 \title{Calculation of permutation p-value}
 \usage{
-calc_perm_p_value(statistic, distribution, m, n, sampled, n.rep,
-  alternative)
+calc_perm_p_value(
+  statistic,
+  distribution,
+  m,
+  n,
+  randomization,
+  n.rep,
+  alternative
+)
 }
 \arguments{
 \item{statistic}{observed value of the test statistic.}
@@ -16,22 +23,23 @@ calc_perm_p_value(statistic, distribution, m, n, sampled, n.rep,
 
 \item{n}{integer value giving size of second sample.}
 
-\item{sampled}{logical value specifying whether the distribution consists of
-all permutations or only a random subset drawn with replacement.}
+\item{randomization}{logical value indicating whether the p-value should be computed from a permutation (\code{FALSE}) or a randomization (\code{TRUE}) distribution.}
 
-\item{n.rep}{integer value giving the number of replications
-(only needed if \code{sampled = TRUE}).}
+\item{n.rep}{an integer value specifying the number of random splits used to
+calculate the randomization distribution if \code{method = "randomization"}.
+This argument is ignored if \code{method = "permutation"} or \code{method = "asymptotic"}.
+The default is \code{n.rep = 10000}.}
 
-\item{alternative}{character string specifying the alternative hypothesis,
-must be one of "\code{two.sided}" (default),
-"\code{greater}" or "\code{less}".}
+\item{alternative}{a character string specifying the alternative hypothesis,
+must be one of "two.sided" (default), "greater" or "less".}
 }
 \value{
-p.value for the specified alternative.
+p-value for the specified alternative.
 }
 \description{
-\code{calc_perm_p_value} calculates the permutation p-value following Smyth & Phipson (2010).
+\code{calc_perm_p_value} calculates the permutation p-value following \insertCite{PhiSmy10perm;textual}{robTests}.
 }
 \references{
-\insertRef{SmyPhi10perm}{robTests}
+\insertRef{PhiSmy10perm}{robTests}
 }
+\keyword{internal}

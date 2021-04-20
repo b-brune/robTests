@@ -4,37 +4,78 @@
 \alias{trimmed_test}
 \title{Two-sample Trimmed t-test (Yuen's t-Test)}
 \usage{
-trimmed_test(x, y, gamma = 0.2, alternative = c("two.sided", "less",
-  "greater"), delta = 0, na.rm = FALSE)
+trimmed_test(
+  x,
+  y,
+  gamma = 0.2,
+  alternative = c("two.sided", "less", "greater"),
+  method = c("asymptotic", "permutation", "randomization"),
+  delta = ifelse(var.test, 1, 0),
+  n.rep = 1000,
+  na.rm = FALSE,
+  var.test = FALSE,
+  wobble.seed = NULL
+)
 }
 \arguments{
-\item{x}{numeric vector of observations.}
+\item{x}{a (non-empty) numeric vector of data values.}
 
-\item{y}{numeric vector of observations.}
+\item{y}{a (non-empty) numeric vector of data values.}
 
-\item{gamma}{numeric value in [0, 0.5] specifying the fraction of observations to be trimmed from each end of the sample before calculating the mean. Values of trim outside that range are taken as the nearest endpoint.}
+\item{gamma}{numeric value in [0, 0.5] specifying the fraction of observations to be
+trimmed from each end of the sample before calculating the mean. Values
+of trim outside that range are taken as the nearest endpoint.}
 
-\item{alternative}{character string specifying the alternative hypothesis, must be one of "\code{two.sided}" (default), "\code{greater}" or "\code{less}".}
+\item{alternative}{a character string specifying the alternative hypothesis,
+must be one of "two.sided" (default), "greater" or "less".}
 
-\item{delta}{numeric indicating the true difference in means}
+\item{method}{a character string specifying how the p-value is computed,
+\code{"asymptotic"} for an asymptotic test based on a normal
+approximation, \code{"permutation"} for a permutation test and
+\code{"randomization"} for a randomization test.
+The permutation test uses all splits of the joint sample into two samples
+of sizes \code{m} and \code{n}, while the randomization test draws
+\code{n.rep} random splits with replacement.}
 
-\item{na.rm}{a logical value indicating whether NA values in \code{x} should be stripped before the computation proceeds.}
+\item{delta}{a numeric value indicating the true difference in the location or scale parameter, depending
+on whether the test should be performed for a difference in location or in scale.
+The default is \code{delta = 0} for location test and \code{delta = 1} for scale test.}
+
+\item{n.rep}{an integer value specifying the number of random splits used to
+calculate the randomization distribution if \code{method = "randomization"}.
+This argument is ignored if \code{method = "permutation"} or \code{method = "asymptotic"}.
+The default is \code{n.rep = 10000}.}
+
+\item{na.rm}{logical value indicating whether NA values in x and y should be stripped before the computation proceeds.}
+
+\item{var.test}{logical value testing whether the samples should be compared for a difference in scale.}
+
+\item{wobble.seed}{integer value used as a seed for the random number
+generation in case of \code{wobble = TRUE} or when the
+\code{var.test = TRUE} and on of the vectors \code{x} and
+\code{y} contains zeros. When no seed is specified, it is
+set randomly. The argument is ignored if
+\code{var.test = FALSE} and \code{wobble = FALSE}.}
 }
 \value{
 A list with class "\code{htest}" containing the following components:
 \item{statistic}{the value of the test statistic.}
 \item{parameter}{the degrees of freedom for the test statistic.}
 \item{p.value}{the p-value for the test.}
-\item{estimate}{the estimated difference in means.}
+\item{estimate}{the trimmed means of \code{x} and \code{y}.}
 \item{null.value}{the specified hypothesized value of the mean difference.}
 \item{alternative}{a character string describing the alternative hypothesis.}
+\item{method}{a character string indicating how the p-value was computed.}
 \item{data.name}{a character string giving the names of the data.}
 }
 \description{
 \code{trimmed_test} performs the two-sample Yuen t-test.
 }
 \examples{
+## Generate random samples
 x <- rnorm(20); y <- rnorm(20)
+
+## Trimmed t-test
 trimmed_test(x, y, gamma = 0.1)
 
 }
@@ -42,4 +83,6 @@ trimmed_test(x, y, gamma = 0.1)
 \insertRef{YueDix73appr}{robTests}
 
 \insertRef{Yue74trim}{robTests}
+
+\insertRef{Fri12onli}{robTests}
 }

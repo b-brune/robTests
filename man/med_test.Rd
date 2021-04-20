@@ -2,36 +2,67 @@
 % Please edit documentation in R/medTest.R
 \name{med_test}
 \alias{med_test}
-\title{Two-sample tests based on the median.}
+\title{Two-sample location tests based on the sample median}
 \usage{
-med_test(x, y, alternative = c("two.sided", "greater", "less"),
-  delta = 0, method = c("asymptotic", "exact", "sampled"),
-  scale = c("S3", "S4"), n.rep = 10000, na.rm = FALSE)
+med_test(
+  x,
+  y,
+  alternative = c("two.sided", "greater", "less"),
+  delta = ifelse(var.test, 1, 0),
+  method = c("asymptotic", "permutation", "randomization"),
+  scale = c("S3", "S4"),
+  n.rep = 10000,
+  na.rm = FALSE,
+  var.test = FALSE,
+  wobble = FALSE,
+  wobble.seed = NULL
+)
 }
 \arguments{
-\item{x}{a numeric vector of observations.}
+\item{x}{a (non-empty) numeric vector of data values.}
 
-\item{y}{a numeric vector of observations.}
+\item{y}{a (non-empty) numeric vector of data values.}
 
-\item{alternative}{a character string specifying the alternative hypothesis, must be one of "\code{two.sided}" (default), 
-"\code{greater}" or "\code{less}".}
+\item{alternative}{a character string specifying the alternative hypothesis,
+must be one of "two.sided" (default), "greater" or "less".}
 
-\item{delta}{a numeric value indicating the true difference in the location parameter, default is \code{delta = 0}.}
+\item{delta}{a numeric value indicating the true difference in the location or scale parameter, depending
+on whether the test should be performed for a difference in location or in scale.
+The default is \code{delta = 0} for location test and \code{delta = 1} for scale test.}
 
-\item{method}{a character string specifying the test method used, \code{"asymptotic"} for an asymptotic test based on the 
-normal distribution, \code{"exact"} for an exact and \code{"sampled"} for a randomized permutation test. The exact 
-permutation test uses all data permutations while the randomized test draws \code{n.rep} random permutations
-with replacement.}
+\item{method}{a character string specifying how the p-value is computed,
+\code{"asymptotic"} for an asymptotic test based on a normal
+approximation, \code{"permutation"} for a permutation test and
+\code{"randomization"} for a randomization test.
+The permutation test uses all splits of the joint sample into two samples
+of sizes \code{m} and \code{n}, while the randomization test draws
+\code{n.rep} random splits with replacement.}
 
-\item{scale}{a character string specifying the scale estimator used for standardization of the test statistic,
-must be one of \code{"S3"} and \code{"S4"}. Default is \code{"S3"}.
-Ignored if \code{method = "asymptotic"}. See details for definition of the scale estimators.}
+\item{scale}{a character string specifying the scale estimator used for standardization
+of the test statistic, must be one of \code{"S3"} and \code{"S4"}.
+Default is \code{"S3"}. Ignored if \code{method = "asymptotic"};
+see details for definition of the scale estimators.}
 
-\item{n.rep}{an integer value specifying the number of random permutations used to calculate 
-the permutation distribution if \code{method = "sampled"}, 
-ignored if \code{method = "exact"} or \code{method = "asymptotic"}. Default is \code{n.rep = 10000}.}
+\item{n.rep}{an integer value specifying the number of random splits used to
+calculate the randomization distribution if \code{method = "randomization"}.
+This argument is ignored if \code{method = "permutation"} or \code{method = "asymptotic"}.
+The default is \code{n.rep = 10000}.}
 
-\item{na.rm}{a logical value indicating whether NA values in \code{x} and \code{y} should be stripped before the computation proceeds.}
+\item{na.rm}{logical value indicating whether NA values in x and y should be stripped before the computation proceeds.}
+
+\item{var.test}{logical value testing whether the samples should be compared for a difference in scale.}
+
+\item{wobble}{logical value indicating whether uniform noise should be added to the sample before
+proceeding with the test, in order to make sure there are no duplicate values in the
+sample that can cause the scale estimate to be 0. Only necessary for the permutation and
+randomization version of the test. The default is \code{wobble = FALSE}.}
+
+\item{wobble.seed}{integer value used as a seed for the random number
+generation in case of \code{wobble = TRUE} or when the
+\code{var.test = TRUE} and on of the vectors \code{x} and
+\code{y} contains zeros. When no seed is specified, it is
+set randomly. The argument is ignored if
+\code{var.test = FALSE} and \code{wobble = FALSE}.}
 }
 \value{
 A list with class "\code{htest}" containing the following components:
@@ -40,37 +71,65 @@ A list with class "\code{htest}" containing the following components:
 \item{estimate}{the sample medians of \code{x} and \code{y}.}
 \item{null.value}{the specified hypothesized value of the mean difference.}
 \item{alternative}{a character string describing the alternative hypothesis.}
-\item{method}{a character string indicating what type of trimmed t-test was performed.}
+\item{method}{a character string indicating how the p-value was computed.}
 \item{data.name}{a character string giving the names of the data.}
 }
 \description{
-\code{med_test} performs a two-sample test for the location shift based on
+\code{med_test} performs a two-sample location test based on
 the difference of the sample medians for both samples.
 }
 \details{
-If the number of replications to determine the permutation distribution is drawn with replacement, we use the results of
-Smyth & Phipson (2010) to calculate the p-value.
-The test statistics and the asymptotic distribution are taken from Fried & Dehling (2011).
+When computing a randomization distribution based on randomly drawn splits with
+replacement, the function \code{\link[statmod]{permp}} \insertCite{PhiSmy10perm}{robTests}
+is used to calculate the p-value. The test statistics and the asymptotic distribution
+are taken from \insertCite{FriDeh11robu;textual}{robTests}.
 
-The test statistics for the exact and sampled version of the test is standardized using a robust scale estimator.
-\code{scale = "S3"} represents use of
+The estimator of the location shift is the difference of the medians of \code{x} and \code{y}.
+
+The test statistics for the permutation and randomization version of the test is standardized using a robust scale estimator.
+The argument \code{scale = "S3"} represents use of
 
 \deqn{S = 2 * ( |X_1 - med(X)|,...,|X_m - med(X)|, |Y_1 - med(Y)|,...,|Y_n - med(Y)| ),}
 
-\code{scale = "S4"} uses
+whereas \code{scale = "S4"} uses
 
-\deqn{S = 1.4826 * ( med( |X_1 - med(X)|,...,|X_m - med(X)| ) + med( |Y_1 - med(Y)|,...,|Y_n - med(Y)| ). }
+\deqn{S = ( med( |X_1 - med(X)|,...,|X_m - med(X)| ) + med( |Y_1 - med(Y)|,...,|Y_n - med(Y)| ).}
 
-For more details see Fried & Dehling (2011).
+For more details see \insertCite{FriDeh11robu;textual}{robTests}.
+
+For \code{var.test = TRUE}, the test compares the two samples for a difference in scale.
+This is achieved by log-transforming the original observations so that a potential
+scale difference appears as a location difference between the transformed samples;
+see \insertCite{Fri12onli;textual}{robTests}. The sample should not contain zeros
+to prevent problems with the necessary log-transformation. If it contains zeros,
+uniform noise is added to all variables in order to remove zeros. A warning is
+printed.
+
+If the sample has been modified (either because of zeros for \code{var.test = TRUE}, or
+\code{wobble = TRUE}, the modified samples can be retrieved using
+
+\code{set.seed(wobble.seed); wobble(x, y)}
 }
 \examples{
+## Generate random samples
+set.seed(108)
 x <- rnorm(20); y <- rnorm(20)
+
+## Asymptotic MED test
 med_test(x, y, method = "asymptotic", scale = "S3")
-med_test(x, y, method = "sampled", n.rep = 1000, scale = "S4")
+
+\dontrun{
+## MED2 test using randomization principle by drawing 1000 random permutations
+## with replacement
+
+med_test(x, y, method = "randomization", n.rep = 1000, scale = "S4")
+}
 
 }
 \references{
-\insertRef{SmyPhi10perm}{robTests}
+\insertRef{PhiSmy10perm}{robTests}
 
 \insertRef{FriDeh11robu}{robTests}
+
+\insertRef{Fri12onli}{robTests}
 }

@@ -7,22 +7,31 @@
 hodges_lehmann_2sample(x, y, na.rm = FALSE)
 }
 \arguments{
-\item{x}{numeric vector of observations.}
+\item{x}{a (non-empty) numeric vector of data values.}
 
-\item{y}{numeric vector of observations.}
+\item{y}{a (non-empty) numeric vector of data values.}
 
-\item{na.rm}{a logical value indicating whether NA values in \code{x} and \code{y} 
-should be stripped before the computation proceeds.}
+\item{na.rm}{logical value indicating whether NA values in x and y should be stripped before the computation proceeds.}
 }
 \value{
 The two-sample Hodges-Lehmann estimator.
 }
 \description{
-\code{hodges_lehmann_2sample} calculates the two-sample Hodges-Lehmann estimator for the location difference
-of two samples x and y.
+\code{hodges_lehmann_2sample} calculates the two-sample Hodges-Lehmann
+estimator for the location difference of two samples x and y.
+}
+\details{
+The two-sample Hodges-Lehmann estimator for two samples \code{x}
+         and \code{y} of sizes \code{m} and \code{n} is defined as
+
+\deqn{med(|x_i - y_j|, 1 \le i \le m, 1 \le j \le n).}
 }
 \examples{
+## Generate random samples
+set.seed(108)
 x <- rnorm(10); y <- rnorm(10)
+
+## Compute two-sample Hodges-Lehmann estimator
 hodges_lehmann_2sample(x, y)
 
 }
